@@ -49,7 +49,7 @@ public class ThreadEx extends Thread{
 				}
 			}
 			
-			System.err.println( "Thread( " + index + " ) waking up ( " + count + " )...");
+			System.err.println( "Test Thread( " + index + " ) waking up ( " + count + " )...");
 			if( !running )
 				return;
 			
