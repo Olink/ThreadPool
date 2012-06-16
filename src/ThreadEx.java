@@ -1,77 +1,49 @@
+import java.util.Random;
+
 
 public class ThreadEx extends Thread{
-	ThreadPool pool;
-	Object wait;
-	int index;
-	boolean running = true;
-	int count;
+	private boolean running = true;
+	private TaskDispenser dispenser;
 	
-	public ThreadEx( ThreadPool pool, int index )
+	public ThreadEx( String name, TaskDispenser d )
 	{
-		this.pool = pool;
-		this.index = index;
-		wait = new Object();
+		super( name );
+		dispenser = d;
 	}
 	
-	public void execute( int c )
-	{
-		count = c;
-		synchronized( pool.active )
-		{
-			pool.active[index] = true;
-		}
-		
-		synchronized( wait )
-		{
-			wait.notifyAll();
-		}
-	}
-	
-	public void complete()
+	public void kill()
 	{
 		running = false;
-		synchronized( wait )
-		{
-			wait.notify();
-		}
 	}
+	
 	public void run()
 	{
-		while( running )
+		Integer t = dispenser.getNext();
+		while( running || t != null )
 		{
-			synchronized( wait )
+			if( t != null )
 			{
+				System.out.println( this.getName() + ": " + t);
 				try {
-					wait.wait();
+					Thread.sleep( new Random().nextInt(500)+500 );
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
-			
-			System.err.println( "Test Thread( " + index + " ) waking up ( " + count + " )...");
-			if( !running )
-				return;
-			
-			System.err.println( "Thread( " + index + " ) executing ( " + count + " )...");
-			for( int i = 0;i <= 10; i++ )
+			else
 			{
-				System.out.println(index + ": " + i);
+				synchronized( dispenser )
+				{
+					try {
+						dispenser.wait();
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
 			}
-			
-			Object lock = pool.lock();
-			
-			synchronized( pool.active )
-			{
-				pool.active[index] = false;
-			}
-			
-			synchronized( lock )
-			{
-				lock.notifyAll();
-			}
-			
-			System.err.println( "Thread( " + index + " ) finishing ( " + count + " )...");
+			t = dispenser.getNext();
 		}
 	}
 }
